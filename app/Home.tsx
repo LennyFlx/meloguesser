@@ -2,6 +2,8 @@ import {SafeAreaView, Text, TouchableOpacity, View} from "react-native";
 import {colors} from "@/styles/colors";
 import {Image, ImageBackground} from "expo-image";
 import {router} from "expo-router";
+import {ROUTES} from "@/constants/routes";
+import MainButton from "@/components/MainButton";
 
 export default function Home() {
     return (
@@ -30,27 +32,21 @@ export default function Home() {
                     />
                 </View>
                 <View style={{ flex: 2 }}>
-                    <TouchableOpacity onPress={() => router.push('/Create')}>
-                        <View
-                            style={{
-                                backgroundColor: colors.pink,
-                                borderRadius: 20,
-                                padding: 20,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                            }}
-                        >
-                            <Text
-                                style={{
-                                    color: colors.white,
-                                    fontFamily: 'Fredoka-Bold',
-                                    fontSize: 18,
-                                }}
-                            >
-                                Créer une partie
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
+                    <MainButton
+                        onPress={() => {}}
+                        text="Créer un partie"
+                        mode="primary"
+                    />
+                    <MainButton
+                        onPress={() => {}}
+                        text="Rejoindre une partie"
+                        mode="primary"
+                    />
+                    <MainButton
+                        onPress={() => {}}
+                        text="Comment jouer ?"
+                        mode="secondary"
+                    />
                 </View>
             </ImageBackground>
         </SafeAreaView>

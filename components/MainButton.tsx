@@ -1,0 +1,63 @@
+import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {colors} from "@/styles/colors";
+import {shadow} from "@/styles/shadow";
+
+interface IProps {
+    onPress: () => void;
+    text: string;
+    mode: 'primary' | 'secondary';
+}
+
+export default function MainButton(props: IProps) {
+    return (
+        <TouchableOpacity onPress={props.onPress}>
+            <View style={[
+                styles.buttonBorder,
+                props.mode === 'primary' ? styles.buttonBorderPrimary : styles.buttonBorderSecondary
+            ]}>
+                <View style={[
+                    styles.button,
+                    props.mode === 'secondary' ? styles.buttonSecondary : styles.buttonPrimary
+                ]}>
+                    <Text style={styles.text}>
+                        {props.text}
+                    </Text>
+                </View>
+            </View>
+        </TouchableOpacity>
+    )
+}
+
+const styles = StyleSheet.create({
+    button: {
+        borderRadius: 20,
+        padding: 20,
+        boxShadow: shadow,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonBorder: {
+        borderWidth: 2,
+        borderRadius: 25,
+        padding: 5,
+        margin: 10,
+        boxShadow: shadow,
+    },
+    buttonPrimary: {
+        backgroundColor: colors.pink,
+    },
+    buttonBorderPrimary: {
+        borderColor: colors.pink,
+    },
+    buttonSecondary: {
+        backgroundColor: colors.white20,
+    },
+    buttonBorderSecondary: {
+        borderColor: colors.white20,
+    },
+    text: {
+        color: colors.white,
+        fontFamily: 'Fredoka-Bold',
+        fontSize: 20,
+    }
+})
