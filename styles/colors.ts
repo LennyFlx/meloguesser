@@ -3,5 +3,6 @@ export const colors = {
     secondary: '#9c26c3',
     white: '#ffffff',
     pink: '#ef767a',
-    white20: '#ffffff30',
+    success: '#5dc3ba',
+    white30: '#ffffff30',
 }

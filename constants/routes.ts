@@ -1,4 +1,6 @@
 export const ROUTES = {
-    HOME: "/Home" as const,
-    CREATE: "/Create" as const,
+    HOME: "/main/Home" as const,
+    CREATE: "/main/Create" as const,
+    JOIN: "/main/Join" as const,
+    RULES: "/main/Rules" as const,
 }

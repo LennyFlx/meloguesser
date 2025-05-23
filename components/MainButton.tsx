@@ -50,10 +50,10 @@ const styles = StyleSheet.create({
         borderColor: colors.pink,
     },
     buttonSecondary: {
-        backgroundColor: colors.white20,
+        backgroundColor: colors.white30,
     },
     buttonBorderSecondary: {
-        borderColor: colors.white20,
+        borderColor: colors.white30,
     },
     text: {
         color: colors.white,
