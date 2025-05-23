@@ -6,12 +6,15 @@ import {ROUTES} from "@/constants/routes";
 import MainButton from "@/components/MainButton";
 import {IMAGES} from "@/constants/images";
 import BackgroundLayout from "@/components/BackgroundLayout";
+import {useSpotifyAuth} from "@/auth/spotifyAuth";
 
 export default function Home() {
+    const { promptAsync } = useSpotifyAuth();
+
     return (
         <BackgroundLayout>
             <View style={{ flex: 0.7, alignItems : 'center', justifyContent: 'center' }}>
-                <TouchableOpacity onPress={() => {}}>
+                <TouchableOpacity onPress={() => promptAsync()}>
                     <View style={styles.auth}>
                         <Text style={styles.text}>
                             Se connecter à ton Spotify
@@ -28,7 +31,7 @@ export default function Home() {
             <View style={{ flex: 2 }}>
                 <MainButton
                     onPress={() => router.push(ROUTES.CREATE)}
-                    text="Créer un partie"
+                    text="Créer une partie"
                     mode="primary"
                 />
                 <MainButton
@@ -62,7 +65,7 @@ const styles = StyleSheet.create({
     image: {
         width: 250,
         height: 250,
-        resizeMode: 'contain',
+        resizeMode: "contain",
         alignSelf: 'center',
     }
 })
