@@ -1,6 +1,5 @@
 import {StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import {colors} from "@/styles/colors";
-import {shadow} from "@/styles/shadow";
 
 interface IProps {
     onPress: () => void;
@@ -10,7 +9,7 @@ interface IProps {
 
 export default function MainButton(props: IProps) {
     return (
-        <TouchableOpacity onPress={props.onPress}>
+        <TouchableOpacity onPress={props.onPress} activeOpacity={1}>
             <View style={[
                 styles.buttonBorder,
                 props.mode === 'primary' ? styles.buttonBorderPrimary : styles.buttonBorderSecondary
@@ -32,16 +31,30 @@ const styles = StyleSheet.create({
     button: {
         borderRadius: 20,
         padding: 20,
-        boxShadow: shadow,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 4,
     },
     buttonBorder: {
         borderWidth: 2,
         borderRadius: 25,
         padding: 5,
         margin: 10,
-        boxShadow: shadow,
+        shadowColor: '#000000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 4,
     },
     buttonPrimary: {
         backgroundColor: colors.pink,
