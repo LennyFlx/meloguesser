@@ -7,7 +7,7 @@ export default function Create() {
                 flex: 1,
                 justifyContent: "center",
                 alignItems: "center",
-                backgroundColor: "#fff",
+                backgroundColor: "#000000",
             }}
         >
             <Text>CREATE</Text>

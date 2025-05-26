@@ -33,28 +33,12 @@ const styles = StyleSheet.create({
         padding: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 4,
     },
     buttonBorder: {
         borderWidth: 2,
         borderRadius: 25,
         padding: 5,
         margin: 10,
-        shadowColor: '#000000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 4,
     },
     buttonPrimary: {
         backgroundColor: colors.pink,

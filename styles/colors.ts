@@ -5,4 +5,5 @@ export const colors = {
     pink: '#ef767a',
     success: '#5dc3ba',
     white30: '#ffffff30',
+    black30: '#00000030',
 }
