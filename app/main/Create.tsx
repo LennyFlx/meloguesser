@@ -6,7 +6,7 @@ import CustomRadio from "@/components/CustomRadio";
 import {useEffect, useState} from "react";
 import MainButton from "@/components/MainButton";
 import {IPlaylist} from "@/types/spotify";
-import {getPlaylistsLiked} from "@/services/playlistService";
+import {getMGPlaylists, getPlaylistsLiked, getUserPlaylists} from "@/services/playlistService";
 import {Image} from "expo-image";
 
 enum PlaylistType {
@@ -28,24 +28,43 @@ export default function Create() {
             switch (playlistType) {
                 case PlaylistType.LIKED:
                     try {
-                        const fetchedPlaylistsLiked = await getPlaylistsLiked("warnoxxx");
+                        const fetchedPlaylistsLiked = await getPlaylistsLiked("warnoxxx"); // Replace with actual user ID
                         if (fetchedPlaylistsLiked) {
                             setPlaylists(fetchedPlaylistsLiked);
                         } else {
                             setPlaylists([]);
                         }
-                        console.log("Fetching liked playlists", fetchedPlaylistsLiked);
                     } catch (error) {
                         console.error("Erreur lors du chargement des playlists likées:", error);
                         setPlaylists([]);
                     }
                     break;
                 case PlaylistType.MY:
-                    // Fetch user's own playlists
+                    try {
+                        const fetchedMyPlaylists = await getUserPlaylists("warnoxxx"); // Replace with actual user ID
+                        if (fetchedMyPlaylists) {
+                            setPlaylists(fetchedMyPlaylists);
+                        } else {
+                            setPlaylists([]);
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors du chargement des playlists de l'utilisateur:", error);
+                        setPlaylists([]);
+                    }
                     console.log("Fetching my playlists");
                     break;
                 case PlaylistType.MG:
-                    // Fetch playlists from the music group
+                    try {
+                        const mgPlaylists = await getMGPlaylists();
+                        if (mgPlaylists) {
+                            setPlaylists(mgPlaylists);
+                        } else {
+                            setPlaylists([]);
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors du chargement des playlists MG:", error);
+                        setPlaylists([]);
+                    }
                     console.log("Fetching music group playlists");
                     break;
                 default:
@@ -87,7 +106,7 @@ export default function Create() {
                     />
                 </View>
             </View>
-            <ScrollView style={styles.playlistContainer}>
+            < ScrollView style={styles.playlistContainer}>
                 {playlists.length > 0 ? (
                     playlists.map((playlist) => (
                         <View key={playlist.id} style={styles.playlistItemContainer}>
@@ -102,7 +121,7 @@ export default function Create() {
                                     }
                                     <Text style={styles.playlistSubtitle}>{playlist.owner.name}   -   {playlist.tracks?.total} titres</Text>
                                 </View>
-                                <TouchableOpacity style={{ justifyContent: 'center' }} onPress={() => {}}>
+                                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', }} onPress={() => {}}>
                                     <Image style={{ width: 25, height: 25 }} contentFit="contain" source={require('../../assets/images/list-icon.svg')}/>
                                 </TouchableOpacity>
                             </View>
