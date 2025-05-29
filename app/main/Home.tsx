@@ -24,7 +24,6 @@ export default function Home() {
         }
     }
 
-    // Vérifier si l'utilisateur est déjà connecté au chargement
     useEffect(() => {
         const checkLoginStatus = async () => {
             const token = await getToken();
@@ -40,11 +39,10 @@ export default function Home() {
         checkLoginStatus();
     }, []);
 
-    // Gère la réponse de l'authentification Spotify quand elle est disponible
     useEffect(() => {
         if (response) {
             handleAuthResponse(response, request).then(() => {
-                // Vérifier à nouveau le statut de connexion après l'authentification
+
                 const checkLoginStatus = async () => {
                     const token = await getToken();
                     setIsLoggedIn(!!token);
@@ -57,7 +55,6 @@ export default function Home() {
         }
     }, [response]);
 
-    // Fonction pour gérer le clic sur le bouton de connexion
     const handleSpotifyLogin = () => {
         promptAsync();
     };
