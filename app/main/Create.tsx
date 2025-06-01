@@ -1,4 +1,4 @@
-import {ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import BackgroundLayout from "@/components/BackgroundLayout";
 import {mainTitle} from "@/styles/titles";
 import {colors} from "@/styles/colors";
@@ -8,6 +8,7 @@ import MainButton from "@/components/MainButton";
 import {IPlaylist} from "@/types/spotify";
 import {getMGPlaylists, getPlaylistsLiked, getUserPlaylists} from "@/services/playlistService";
 import {Image} from "expo-image";
+import ModalPlaylist from "@/components/ModalPlaylist";
 
 enum PlaylistType {
     LIKED = 'liked',
@@ -19,6 +20,18 @@ export default function Create() {
     const [playlistType, setPlaylistType] = useState<PlaylistType>(PlaylistType.LIKED)
     const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
 
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+
+    const [playlistToShow, setPlaylistToShow] = useState<IPlaylist | null>(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const [selectedPlaylist, setSelectedPlaylist] = useState<IPlaylist | null>(null);
+
+    const openModal = (playlist: IPlaylist) => {
+        setPlaylistToShow(playlist);
+        setIsModalVisible(true);
+    }
+
     const handlePlaylistTypeChange = (type: PlaylistType) => {
         setPlaylistType(type);
     }
@@ -28,6 +41,7 @@ export default function Create() {
             switch (playlistType) {
                 case PlaylistType.LIKED:
                     try {
+                        setIsLoading(true);
                         const fetchedPlaylistsLiked = await getPlaylistsLiked("warnoxxx"); // Replace with actual user ID
                         if (fetchedPlaylistsLiked) {
                             setPlaylists(fetchedPlaylistsLiked);
@@ -37,10 +51,13 @@ export default function Create() {
                     } catch (error) {
                         console.error("Erreur lors du chargement des playlists likées:", error);
                         setPlaylists([]);
+                    } finally {
+                        setIsLoading(false);
                     }
                     break;
                 case PlaylistType.MY:
                     try {
+                        setIsLoading(true);
                         const fetchedMyPlaylists = await getUserPlaylists("warnoxxx"); // Replace with actual user ID
                         if (fetchedMyPlaylists) {
                             setPlaylists(fetchedMyPlaylists);
@@ -50,11 +67,14 @@ export default function Create() {
                     } catch (error) {
                         console.error("Erreur lors du chargement des playlists de l'utilisateur:", error);
                         setPlaylists([]);
+                    } finally {
+                        setIsLoading(false);
                     }
                     console.log("Fetching my playlists");
                     break;
                 case PlaylistType.MG:
                     try {
+                        setIsLoading(true);
                         const mgPlaylists = await getMGPlaylists();
                         if (mgPlaylists) {
                             setPlaylists(mgPlaylists);
@@ -64,8 +84,10 @@ export default function Create() {
                     } catch (error) {
                         console.error("Erreur lors du chargement des playlists MG:", error);
                         setPlaylists([]);
+                    } finally {
+                        setIsLoading(false);
                     }
-                    console.log("Fetching music group playlists");
+                    console.log("Fetching MG playlists");
                     break;
                 default:
                     console.log("Unknown playlist type");
@@ -73,6 +95,8 @@ export default function Create() {
         };
         fetchPlaylists();
     }, [playlistType]);
+
+
 
     return (
         <BackgroundLayout>
@@ -82,9 +106,7 @@ export default function Create() {
             <View style={{marginVertical: 5}}>
                 <Text style={styles.text}>
                     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Mauris mollis enim a purus viverra egestas.aa
-                    Nam non leo fringilla, consequat felis eu, ultrices justo.
-                    Morbi at turpis posuere, condimentum erat et, porttitor metus.
+                    Mauris mollis enim a purus viverra egestas.
                 </Text>
             </View>
             <View style={{justifyContent: 'center', marginVertical: 5}}>
@@ -106,13 +128,26 @@ export default function Create() {
                     />
                 </View>
             </View>
-            < ScrollView style={styles.playlistContainer}>
-                {playlists.length > 0 ? (
+            <ScrollView style={styles.playlistContainer}>
+                {isLoading ? (
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={colors.white}/>
+                        <Text style={styles.playlistSubtitle}>Chargement des playlists</Text>
+                    </View>
+                    ) :
+                playlists.length > 0 ? (
                     playlists.map((playlist) => (
                         <View key={playlist.id} style={styles.playlistItemContainer}>
-                            <View style={styles.playlistItem}>
+                            <TouchableOpacity
+                                activeOpacity={1}
+                                onPress={() => {setSelectedPlaylist(playlist)}}
+                                style={[
+                                    styles.playlistItem,
+                                    selectedPlaylist?.id === playlist.id ? styles.selectedPlaylist : {}
+                                ]}
+                            >
                                 <Image style={styles.playlistImage} source={playlist.image}/>
-                                <View style={{ flex: 1, flexDirection: "column", justifyContent: "center", gap: 10 }}>
+                                <View style={styles.playlistInfo}>
                                     {playlist.name.length > 23 ? (
                                         <Text style={styles.playlistTitle}>{playlist.name.slice(0, 23)} ...</Text>
                                     ) : (
@@ -121,24 +156,56 @@ export default function Create() {
                                     }
                                     <Text style={styles.playlistSubtitle}>{playlist.owner.name}   -   {playlist.tracks?.total} titres</Text>
                                 </View>
-                                <TouchableOpacity style={{ justifyContent: 'center', alignItems: 'center', }} onPress={() => {}}>
-                                    <Image style={{ width: 25, height: 25 }} contentFit="contain" source={require('../../assets/images/list-icon.svg')}/>
+                                <TouchableOpacity style={styles.listIconContainer} onPress={() => openModal(playlist)}>
+                                    <Image style={styles.listIcon} contentFit="contain" source={require('../../assets/images/list-icon.svg')}/>
                                 </TouchableOpacity>
-                            </View>
+                            </TouchableOpacity>
                         </View>
                     ))
                 ) : (
                     <Text style={styles.text}>Aucune playlist trouvée</Text>
                 )}
             </ScrollView>
+            <View style={styles.selectedPlaylistContainer}>
+                <Text style={styles.selectedPlaylistText}>Playlist sélectionné :</Text>
+                { selectedPlaylist ? (
+                    <View style={styles.selectedPlaylistItem}>
+                        <Image style={styles.playlistImage} source={selectedPlaylist.image}/>
+                        <View style={styles.playlistInfo}>
+                            {selectedPlaylist.name.length > 23 ? (
+                                <Text style={styles.playlistTitle}>{selectedPlaylist.name.slice(0, 23)} ...</Text>
+                            ) : (
+                                <Text style={styles.playlistTitle}>{selectedPlaylist.name}</Text>
+                            )
+                            }
+                            <Text style={styles.playlistSubtitle}>{selectedPlaylist.owner.name}   -   {selectedPlaylist.tracks?.total} titres</Text>
+                        </View>
+                    </View>
+                ) : (
+                    <Text style={styles.selectedPlaylistTextInfo}>Aucune playlist sélectionnée</Text>
+                )}
+            </View>
             <View style={{}}>
                 <MainButton onPress={() => {}} text={'Je choisi cette playlist'} mode={"primary"}/>
             </View>
+            {playlistToShow && isModalVisible && (
+                <ModalPlaylist
+                    visible={isModalVisible}
+                    setVisible={setIsModalVisible}
+                    playlistData={playlistToShow}
+                />
+            )}
         </BackgroundLayout>
     );
 }
 
 const styles = StyleSheet.create({
+    loadingContainer: {
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+        gap: 10
+    },
     text: {
         fontFamily: "Figtree-Regular",
         color: colors.white,
@@ -166,7 +233,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.white30,
     },
     playlistItemContainer: {
-        padding: 20,
+        padding: 10,
         borderBottomWidth: 1,
         borderBottomColor: colors.white30,
         flexDirection: "row",
@@ -175,12 +242,20 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         flexDirection: "row",
-        gap: 10
+        gap: 10,
+        borderRadius: 10,
+        padding: 10,
     },
     playlistImage: {
         height: 50,
         width: 50,
         borderRadius: 10
+    },
+    playlistInfo: {
+        flex: 1,
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 10
     },
     playlistTitle: {
         fontFamily: "Figtree-Black",
@@ -192,4 +267,43 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: colors.white,
     },
+    listIcon: {
+        width: 25,
+        height: 25,
+    },
+    listIconContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    selectedPlaylistText: {
+        fontFamily: "Figtree-Black",
+        color: colors.white,
+        fontSize: 16,
+        textAlign: "center",
+    },
+    selectedPlaylistTextInfo: {
+        fontFamily: "Figtree-Regular",
+        fontSize: 14,
+        textAlign: 'center'
+    },
+    selectedPlaylistContainer: {
+        gap: 15,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 15,
+        marginBottom: 5
+    },
+    selectedPlaylistItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 10,
+        padding: 10,
+        width: '100%',
+        backgroundColor: colors.white30,
+        borderRadius: 20
+    },
+    selectedPlaylist: {
+        backgroundColor: colors.white30,
+    }
+
 })

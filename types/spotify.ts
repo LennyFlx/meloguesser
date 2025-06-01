@@ -11,3 +11,14 @@ export interface IPlaylist {
         total: number;
     }
 }
+
+export interface ITrack {
+    id: string;
+    name: string;
+    artists: {
+        id: string;
+        name: string;
+    }[];
+    releaseDate: string;
+    image: string;
+}
