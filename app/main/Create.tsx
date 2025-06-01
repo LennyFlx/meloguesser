@@ -99,7 +99,7 @@ export default function Create() {
 
 
     return (
-        <BackgroundLayout>
+        <BackgroundLayout isBlurred={isModalVisible}>
             <View style={{}}>
                 <Text style={mainTitle}>Choisis ta playlist</Text>
             </View>
