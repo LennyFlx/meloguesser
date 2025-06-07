@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
         borderWidth: 2,
         borderRadius: 25,
         padding: 5,
-        margin: 10,
+        marginVertical: 10,
     },
     buttonPrimary: {
         backgroundColor: colors.pink,
