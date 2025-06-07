@@ -1,26 +1,21 @@
-import {ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View} from "react-native";
+import {ActivityIndicator, FlatList, StyleSheet, Text, TouchableOpacity, View} from "react-native";
 import BackgroundLayout from "@/components/BackgroundLayout";
 import {mainTitle} from "@/styles/titles";
 import {colors} from "@/styles/colors";
 import CustomRadio from "@/components/CustomRadio";
-import {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import MainButton from "@/components/MainButton";
-import {IPlaylist} from "@/types/spotify";
-import {getMGPlaylists, getPlaylistsLiked, getUserPlaylists} from "@/services/playlistService";
+import {IPlaylist, PlaylistType} from "@/types/spotify";
+import {fetchNextPlaylists, fetchPlaylists} from "@/services/playlistService";
 import {Image} from "expo-image";
 import ModalPlaylist from "@/components/ModalPlaylist";
-
-enum PlaylistType {
-    LIKED = 'liked',
-    MY = 'my',
-    MG = 'mg'
-}
 
 export default function Create() {
     const [playlistType, setPlaylistType] = useState<PlaylistType>(PlaylistType.LIKED)
     const [playlists, setPlaylists] = useState<IPlaylist[]>([]);
-
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [nextUrl, setNextUrl] = useState<string | null>(null);
+    const [loadingMore, setLoadingMore] = useState<boolean>(false);
 
     const [playlistToShow, setPlaylistToShow] = useState<IPlaylist | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -37,66 +32,86 @@ export default function Create() {
     }
 
     useEffect(() => {
-        const fetchPlaylists = async () => {
-            switch (playlistType) {
-                case PlaylistType.LIKED:
-                    try {
-                        setIsLoading(true);
-                        const fetchedPlaylistsLiked = await getPlaylistsLiked("warnoxxx"); // Replace with actual user ID
-                        if (fetchedPlaylistsLiked) {
-                            setPlaylists(fetchedPlaylistsLiked);
-                        } else {
-                            setPlaylists([]);
-                        }
-                    } catch (error) {
-                        console.error("Erreur lors du chargement des playlists likées:", error);
-                        setPlaylists([]);
-                    } finally {
-                        setIsLoading(false);
-                    }
-                    break;
-                case PlaylistType.MY:
-                    try {
-                        setIsLoading(true);
-                        const fetchedMyPlaylists = await getUserPlaylists("warnoxxx"); // Replace with actual user ID
-                        if (fetchedMyPlaylists) {
-                            setPlaylists(fetchedMyPlaylists);
-                        } else {
-                            setPlaylists([]);
-                        }
-                    } catch (error) {
-                        console.error("Erreur lors du chargement des playlists de l'utilisateur:", error);
-                        setPlaylists([]);
-                    } finally {
-                        setIsLoading(false);
-                    }
-                    console.log("Fetching my playlists");
-                    break;
-                case PlaylistType.MG:
-                    try {
-                        setIsLoading(true);
-                        const mgPlaylists = await getMGPlaylists();
-                        if (mgPlaylists) {
-                            setPlaylists(mgPlaylists);
-                        } else {
-                            setPlaylists([]);
-                        }
-                    } catch (error) {
-                        console.error("Erreur lors du chargement des playlists MG:", error);
-                        setPlaylists([]);
-                    } finally {
-                        setIsLoading(false);
-                    }
-                    console.log("Fetching MG playlists");
-                    break;
-                default:
-                    console.log("Unknown playlist type");
+
+        const getPlaylists = async () => {
+            try {
+                setIsLoading(true);
+                const playlists = await fetchPlaylists(playlistType)
+                if (playlists) {
+                    setPlaylists(playlists.items);
+                    setNextUrl(playlists.next || null);
+                } else {
+                    setPlaylists([]);
+                    setNextUrl(null);
+                }
+            } catch (error) {
+                console.error("Erreur lors du chargement des playlists:", error);
+                setPlaylists([]);
+                setNextUrl(null);
+            } finally {
+                setIsLoading(false);
             }
         };
-        fetchPlaylists();
+        getPlaylists();
     }, [playlistType]);
 
+    const loadMorePlaylists = async (next: string) => {
+        const playlist = await fetchNextPlaylists(next, playlistType);
+        if (playlist) {
+            setPlaylists(prevPlaylists => [...prevPlaylists, ...playlist.items]);
+            setNextUrl(playlist.next || null);
+        } else {
+            setNextUrl(null);
+        }
+    }
 
+    // TODO: Problème de récupération des playlists: Doublons lors du scroll event
+
+    const handleLoadMore = useCallback(() => {
+        if (nextUrl && !loadingMore && !isLoading) {
+            setLoadingMore(true);
+            loadMorePlaylists(nextUrl);
+        } else  {
+            setLoadingMore(false);
+        }
+    }, [nextUrl, loadingMore, isLoading]);
+
+    const renderItem = ({item}: {item: IPlaylist}) => (
+        <View key={item.id} style={styles.playlistItemContainer}>
+            <TouchableOpacity
+                activeOpacity={1}
+                onPress={() => {setSelectedPlaylist(item)}}
+                style={[
+                    styles.playlistItem,
+                    selectedPlaylist?.id === item.id ? styles.selectedPlaylist : {}
+                ]}
+            >
+                <Image style={styles.playlistImage} source={{uri: item.image}}/>
+                <View style={styles.playlistInfo}>
+                    {item.name.length > 23 ? (
+                        <Text style={styles.playlistTitle}>{item.name.slice(0, 23)} ...</Text>
+                    ) : (
+                        <Text style={styles.playlistTitle}>{item.name}</Text>
+                    )}
+                    <Text style={styles.playlistSubtitle}>{item.owner.name}   -   {item.tracks?.total} titres</Text>
+                </View>
+                <TouchableOpacity style={styles.listIconContainer} onPress={() => openModal(item)}>
+                    <Image style={styles.listIcon} contentFit="contain" source={require('../../assets/images/list-icon.svg')}/>
+                </TouchableOpacity>
+            </TouchableOpacity>
+        </View>
+    );
+
+    const renderFooter = () => {
+        if (!loadingMore) return null;
+
+        return (
+            <View style={styles.footerLoading}>
+                <ActivityIndicator size="small" color={colors.white} />
+                <Text style={styles.playlistSubtitle}>Chargement...</Text>
+            </View>
+        );
+    };
 
     return (
         <BackgroundLayout isBlurred={isModalVisible}>
@@ -128,44 +143,30 @@ export default function Create() {
                     />
                 </View>
             </View>
-            <ScrollView style={styles.playlistContainer}>
                 {isLoading ? (
-                    <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color={colors.white}/>
-                        <Text style={styles.playlistSubtitle}>Chargement des playlists</Text>
+                    <View style={styles.playlistContainer}>
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color={colors.white}/>
+                            <Text style={styles.playlistSubtitle}>Chargement des playlists</Text>
+                        </View>
                     </View>
                     ) :
                 playlists.length > 0 ? (
-                    playlists.map((playlist) => (
-                        <View key={playlist.id} style={styles.playlistItemContainer}>
-                            <TouchableOpacity
-                                activeOpacity={1}
-                                onPress={() => {setSelectedPlaylist(playlist)}}
-                                style={[
-                                    styles.playlistItem,
-                                    selectedPlaylist?.id === playlist.id ? styles.selectedPlaylist : {}
-                                ]}
-                            >
-                                <Image style={styles.playlistImage} source={playlist.image}/>
-                                <View style={styles.playlistInfo}>
-                                    {playlist.name.length > 23 ? (
-                                        <Text style={styles.playlistTitle}>{playlist.name.slice(0, 23)} ...</Text>
-                                    ) : (
-                                        <Text style={styles.playlistTitle}>{playlist.name}</Text>
-                                    )
-                                    }
-                                    <Text style={styles.playlistSubtitle}>{playlist.owner.name}   -   {playlist.tracks?.total} titres</Text>
-                                </View>
-                                <TouchableOpacity style={styles.listIconContainer} onPress={() => openModal(playlist)}>
-                                    <Image style={styles.listIcon} contentFit="contain" source={require('../../assets/images/list-icon.svg')}/>
-                                </TouchableOpacity>
-                            </TouchableOpacity>
-                        </View>
-                    ))
+                    <FlatList
+                        style={styles.playlistContainer}
+                        data={playlists}
+                        renderItem={renderItem}
+                        keyExtractor={(item) => item.id}
+                        onEndReached={() => handleLoadMore()}
+                        onEndReachedThreshold={0.2}
+                        ListFooterComponent={renderFooter}
+                        maxToRenderPerBatch={5}
+                        initialNumToRender={10}
+                        removeClippedSubviews={true}
+                    />
                 ) : (
                     <Text style={styles.text}>Aucune playlist trouvée</Text>
                 )}
-            </ScrollView>
             <View style={styles.selectedPlaylistContainer}>
                 <Text style={styles.selectedPlaylistText}>Playlist sélectionné :</Text>
                 { selectedPlaylist ? (
@@ -304,6 +305,12 @@ const styles = StyleSheet.create({
     },
     selectedPlaylist: {
         backgroundColor: colors.white30,
-    }
-
+    },
+    footerLoading: {
+        padding: 15,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 10
+    },
 })

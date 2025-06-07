@@ -1,5 +1,5 @@
 import {getToken} from "@/auth/tokenService";
-import {ITrack} from "@/types/spotify";
+import {ITrack, ITrackResponse} from "@/types/spotify";
 
 export async function fetchTracksFromPlaylist(href: string) {
     try {
@@ -17,7 +17,7 @@ export async function fetchTracksFromPlaylist(href: string) {
         }
 
         const trackData = await response.json();
-        return trackData.items || [];
+        return trackData;
     } catch (error) {
         console.error("Error fetching track playlists:", error);
         return [];
@@ -26,9 +26,10 @@ export async function fetchTracksFromPlaylist(href: string) {
 
 export async function getTracksFromPlaylist(href: string) {
     try {
-        const fetchedTracks = await fetchTracksFromPlaylist(href);
-        if (fetchedTracks && fetchedTracks.length > 0) {
-            const formattedTracks: ITrack[] = fetchedTracks.map((item: any) => ({
+        const data: ITrackResponse = await fetchTracksFromPlaylist(href);
+
+        if (data.items && data.items.length > 0) {
+            const formattedTracks: ITrack[] = data.items.map((item: any) => ({
                 id: item.track.id,
                 name: item.track.name,
                 artists: item.track.artists.map((artist: any) => ({
@@ -38,7 +39,10 @@ export async function getTracksFromPlaylist(href: string) {
                 releaseDate: item.track.album.release_date.substring(0, 4),
                 image: item.track.album.images[0]?.url || ""
             }));
-            return formattedTracks;
+            return {
+                items: formattedTracks,
+                next: data.next || null
+            };
         } else {
             console.warn("Aucune piste trouvée dans cette playlist.");
         }

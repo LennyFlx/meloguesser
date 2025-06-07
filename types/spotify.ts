@@ -12,6 +12,11 @@ export interface IPlaylist {
     }
 }
 
+export interface IPlaylistResponse {
+    items: IPlaylist[];
+    next?: string;
+}
+
 export interface ITrack {
     id: string;
     name: string;
@@ -21,4 +26,15 @@ export interface ITrack {
     }[];
     releaseDate: string;
     image: string;
+}
+
+export interface ITrackResponse {
+    items: ITrack[];
+    next?: string;
+}
+
+export enum PlaylistType {
+    LIKED = 'liked',
+    MY = 'my',
+    MG = 'mg'
 }

@@ -1,13 +1,30 @@
 import {ENDPOINTS} from "@/constants/endpoints";
 import {getToken} from "@/auth/tokenService";
-import {IPlaylist} from "@/types/spotify";
+import {IPlaylist, IPlaylistResponse, PlaylistType} from "@/types/spotify";
+import {PLAYLIST_LIMIT} from "@/constants/limits";
 
-export async function fetchUserPlaylists() {
+export const fetchPlaylists = async (type: PlaylistType): Promise<IPlaylistResponse | null> => {
     try {
         const token = await getToken();
         if (!token) return null;
 
-        const response = await fetch(ENDPOINTS.USER_PLAYLISTS, {
+        let endpoint: string;
+
+        switch (type) {
+            case PlaylistType.LIKED:
+                endpoint = ENDPOINTS.USER_PLAYLISTS + PLAYLIST_LIMIT;
+                break;
+            case PlaylistType.MY:
+                endpoint = ENDPOINTS.USER_PLAYLISTS + PLAYLIST_LIMIT;
+                break;
+            case PlaylistType.MG:
+                endpoint = ENDPOINTS.PLAYLIST_BY_USER_ID("warnoxxx") + PLAYLIST_LIMIT;
+                break;
+            default:
+                throw new Error("Invalid playlist type");
+        }
+
+        const response = await fetch(endpoint, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -17,31 +34,9 @@ export async function fetchUserPlaylists() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const playlistsData = await response.json();
-        return playlistsData.items || [];
-    } catch (error) {
-        console.error("Error fetching playlists:", error);
-        return [];
-    }
-}
+        const data = await response.json();
 
-export async function getMGPlaylists() {
-    try {
-        const token = await getToken();
-        if (!token) return null;
-
-        const response = await fetch(ENDPOINTS.PLAYLIST_BY_USER_ID("warnoxxx"), {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const playlistsData = await response.json();
-        const mgPlaylists: IPlaylist[] = playlistsData.items.map((playlist: any) => ({
+        const playlistsData: IPlaylist[] = data.items.map((playlist: any) => ({
             id: playlist.id,
             name: playlist.name,
             owner: {
@@ -54,63 +49,78 @@ export async function getMGPlaylists() {
                 total: playlist.tracks.total
             }
         }));
-        return mgPlaylists.filter(playlist => playlist.name.includes('MG'));
-    } catch (error) {
-        console.error("Error fetching playlists:", error);
-        return [];
-    }
-}
 
-export async function getPlaylistsLiked(userId: string) {
-    try {
-        const playlists = await fetchUserPlaylists();
-        if (playlists && playlists.length > 0) {
-            const likedPlaylistsData: IPlaylist[] = playlists.map((playlist: any) => ({
-                id: playlist.id,
-                name: playlist.name,
-                owner: {
-                    id: playlist.owner.id,
-                    name: playlist.owner.display_name
-                },
-                image: playlist.images[0]?.url || "",
-                tracks: {
-                    href: playlist.tracks.href,
-                    total: playlist.tracks.total
-                }
-            }));
-            return likedPlaylistsData.filter(playlist => playlist.owner.id !== userId);
+        if (PlaylistType.LIKED === type) {
+            return {
+                items: playlistsData.filter(playlist => playlist.owner.id !== "warnoxxx"), // Replace by current user ID
+                next: data.next || null
+            };
+        } else if (PlaylistType.MY === type) {
+            return {
+                items: playlistsData.filter(playlist => playlist.owner.id === "warnoxxx"), // Replace by current user ID
+                next: data.next || null
+            };
         } else {
-            console.log("No liked playlists found or playlists data is empty.");
+            return {
+                items: playlistsData.filter(playlist => playlist.name.includes('MG')),
+                next: data.next || null
+            };
         }
     } catch (error) {
-        console.error("Error fetching liked playlist:", error);
+        console.error("Error fetching playlists:", error);
         return null;
     }
 }
 
-export async function getUserPlaylists(userId: string) {
+export const fetchNextPlaylists = async (url: string, type: PlaylistType): Promise<IPlaylistResponse | null> => {
     try {
-        const playlists = await fetchUserPlaylists();
-        if (playlists && playlists.length > 0) {
-            const userPlaylistsData: IPlaylist[] = playlists.map((playlist: any) => ({
-                id: playlist.id,
-                name: playlist.name,
-                owner: {
-                    id: playlist.owner.id,
-                    name: playlist.owner.display_name
-                },
-                image: playlist.images[0]?.url || "",
-                tracks: {
-                    href: playlist.tracks.href,
-                    total: playlist.tracks.total
-                }
-            }));
-            return userPlaylistsData.filter(playlist => playlist.owner.id === userId);
+        const token = await getToken();
+        if (!token) return null;
+
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        const playlistsData: IPlaylist[] = data.items.map((playlist: any) => ({
+            id: playlist.id,
+            name: playlist.name,
+            owner: {
+                id: playlist.owner.id,
+                name: playlist.owner.display_name
+            },
+            image: playlist.images[0]?.url || "",
+            tracks: {
+                href: playlist.tracks.href,
+                total: playlist.tracks.total
+            }
+        }));
+
+        if (PlaylistType.LIKED === type) {
+            return {
+                items: playlistsData.filter(playlist => playlist.owner.id !== "warnoxxx"), // Replace by current user ID
+                next: data.next || null
+            };
+        } else if (PlaylistType.MY === type) {
+            return {
+                items: playlistsData.filter(playlist => playlist.owner.id === "warnoxxx"), // Replace by current user ID
+                next: data.next || null
+            };
         } else {
-            console.log("No user playlists found or playlists data is empty.");
+            return {
+                items: playlistsData.filter(playlist => playlist.name.includes('MG')),
+                next: data.next || null
+            };
         }
     } catch (error) {
-        console.error("Error fetching user playlists:", error);
+        console.error("Error fetching next playlists:", error);
         return null;
     }
 }
