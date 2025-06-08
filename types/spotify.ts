@@ -1,3 +1,9 @@
+export interface IUserResponse {
+    id: string;
+    name: string;
+    product: string;
+}
+
 export interface IPlaylist {
     id: string;
     name: string;

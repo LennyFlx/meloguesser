@@ -1,5 +1,6 @@
 import {getToken} from "@/auth/tokenService";
 import {ENDPOINTS} from "@/constants/endpoints";
+import {IUserResponse} from "@/types/spotify";
 
 
 export async function fetchUserData() {
@@ -19,11 +20,12 @@ export async function fetchUserData() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const userData = await response.json();
-        if (userData.product === "premium") {
-            return userData;
-        }
-
+        const data = await response.json();
+        const userData: IUserResponse = {
+            id: data.id,
+            name: data.display_name,
+            product: data.product
+        };
         return userData;
 
     } catch (error) {

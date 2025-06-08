@@ -5,20 +5,22 @@ interface IProps {
     onPress: () => void;
     text: string;
     mode: 'primary' | 'secondary';
+    disabled?: boolean;
 }
 
 export default function MainButton(props: IProps) {
     return (
-        <TouchableOpacity onPress={props.onPress} activeOpacity={1}>
+        <TouchableOpacity onPress={props.onPress} activeOpacity={1} disabled={props.disabled}>
             <View style={[
-                styles.buttonBorder,
+                props.disabled ? styles.buttonBorderDisabled : styles.buttonBorder,
                 props.mode === 'primary' ? styles.buttonBorderPrimary : styles.buttonBorderSecondary
             ]}>
                 <View style={[
-                    styles.button,
-                    props.mode === 'secondary' ? styles.buttonSecondary : styles.buttonPrimary
+                    props.disabled ? styles.buttonDisabled : styles.button,
+                    props.mode === 'secondary' && !props.disabled ? styles.buttonSecondary : null,
+                    props.mode === 'primary' && !props.disabled? styles.buttonPrimary : null
                 ]}>
-                    <Text style={styles.text}>
+                    <Text style={props.disabled ? styles.textDisabled : styles.text}>
                         {props.text}
                     </Text>
                 </View>
@@ -33,6 +35,17 @@ const styles = StyleSheet.create({
         padding: 20,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    buttonDisabled: {
+        backgroundColor: colors.black30,
+        borderRadius: 20,
+        padding: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    buttonBorderDisabled: {
+        padding: 5,
+        marginVertical: 10,
     },
     buttonBorder: {
         borderWidth: 2,
@@ -51,6 +64,11 @@ const styles = StyleSheet.create({
     },
     buttonBorderSecondary: {
         borderColor: colors.white30,
+    },
+    textDisabled: {
+        color: colors.white30,
+        fontFamily: 'Fredoka-Bold',
+        fontSize: 20,
     },
     text: {
         color: colors.white,

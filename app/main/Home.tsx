@@ -11,16 +11,17 @@ import {handleAuthResponse} from "@/auth/authService";
 import {useEffect, useState} from "react";
 import {deleteToken, getToken} from "@/auth/tokenService";
 import {fetchUserData} from "@/services/userServices";
+import {IUserResponse} from "@/types/spotify";
 
 export default function Home() {
     const {promptAsync, request, response} = useSpotifyAuth();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [userName, setUserName] = useState("");
+    const [user, setUser] = useState<IUserResponse | null>(null);
 
     const loadUserProfile = async () => {
         const userData = await fetchUserData();
-        if (userData.display_name) {
-            setUserName(userData.display_name);
+        if (userData) {
+            setUser(userData);
         }
     }
 
@@ -62,7 +63,7 @@ export default function Home() {
     const handleLogout = async () => {
         await deleteToken();
         setIsLoggedIn(false);
-        setUserName("");
+        setUser(null);
         console.log("Utilisateur déconnecté");
     }
 
@@ -77,7 +78,7 @@ export default function Home() {
                                 style={{ width: 20, height: 20, borderRadius: 25 }}
                             />
                             <Text style={styles.text}>
-                                {userName}
+                                {user?.name}
                             </Text>
                         </View>
                         <View>
@@ -110,10 +111,14 @@ export default function Home() {
                 />
             </View>
             <View style={{ flex: 2 }}>
+                {!isLoggedIn && user?.product !== 'premium' ? (
+                    <Text style={styles.subtext}>Compte Spotify Premium requis</Text>
+                ) : null}
                 <MainButton
                     onPress={() => router.push(ROUTES.CREATE)}
                     text="Créer une partie"
                     mode="primary"
+                    disabled={!isLoggedIn || user?.product !== 'premium'}
                 />
                 <MainButton
                     onPress={() => router.push(ROUTES.JOIN)}
@@ -151,6 +156,11 @@ const styles = StyleSheet.create({
         color: colors.white,
         fontFamily: 'Fredoka-Bold',
         fontSize: 20,
+    },
+    subtext: {
+        color: colors.white,
+        fontFamily: 'Figtree-Regular',
+        fontSize: 12,
     },
     image: {
         width: 250,
